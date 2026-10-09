@@ -7,25 +7,28 @@ import { LoginForm } from "./LoginForm";
 export default async function LoginPage() {
   if (await getUser()) redirect("/");
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-side p-10 text-slate-300 lg:flex">
-        <Image src="/login-esg.webp" alt="" fill priority sizes="50vw" className="scale-105 object-cover object-[30%_center] blur-[2px]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-side via-side/50 to-side/10" />
-        <div className="absolute inset-0 bg-gradient-to-r from-side/40 to-transparent" />
+    <div className="grid min-h-screen bg-surface lg:grid-cols-[1.25fr_1fr]">
+      <div className="relative m-3 hidden overflow-hidden rounded-3xl bg-side lg:block">
+        <Image src="/login-esg.webp" alt="" fill priority sizes="60vw" className="object-cover object-left" />
 
-        <div className="relative flex items-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-lg bg-accent font-bold text-white">S</span>
-          <span className="text-lg font-semibold text-white">Sutra <span className="text-emerald-400">ESG</span></span>
+        {/* progressive blur: sharp photo at the top, frosted at the bottom behind the text */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 backdrop-blur-xl [mask-image:linear-gradient(to_top,black_45%,transparent)]" />
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+
+        <div className="absolute left-6 top-6 flex items-center gap-2.5 rounded-full border border-white/15 bg-black/25 py-1.5 pl-1.5 pr-4 backdrop-blur-md">
+          <span className="grid size-7 place-items-center rounded-full bg-accent text-sm font-bold text-white">S</span>
+          <span className="text-sm font-semibold text-white">Sutra <span className="text-emerald-300">ESG</span></span>
         </div>
-        <div className="relative max-w-md rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
-          <h2 className="text-3xl font-semibold leading-tight tracking-tight text-white">
+
+        <div className="absolute inset-x-0 bottom-0 p-10">
+          <h2 className="max-w-lg text-3xl font-semibold leading-tight tracking-tight text-white">
             Evidence-backed BRSR reporting, from project site to group board.
           </h2>
-          <p className="mt-4 text-sm text-slate-300">
+          <p className="mt-3 max-w-lg text-sm text-white/75">
             Scope 1, 2 and 3 emissions with every number traced to its bill, Indian emission factors and SEBI-format reports.
           </p>
-          <div className="mt-6 flex items-center gap-2 text-xs text-slate-400">
-            <ShieldCheck className="size-4 text-emerald-400" /> No bill, no number.
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs text-white/85 backdrop-blur">
+            <ShieldCheck className="size-3.5 text-emerald-300" /> No bill, no number.
           </div>
         </div>
       </div>
