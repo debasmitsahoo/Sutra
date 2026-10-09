@@ -40,7 +40,8 @@ export default async function AdminPage() {
         {(["company", "bu", "project"] as const).map((t) =>
           counts[t] ? (
             <span key={t} className="rounded-full border border-line bg-surface px-3 py-1 text-xs text-muted">
-              <b className="num font-semibold text-ink">{counts[t]}</b> {t === "bu" ? "business units" : `${t === "company" ? "companies" : "projects"}`}
+              <b className="num font-semibold text-ink">{counts[t]}</b>{" "}
+              {{ company: ["company", "companies"], bu: ["business unit", "business units"], project: ["project", "projects"] }[t][counts[t] === 1 ? 0 : 1]}
             </span>
           ) : null,
         )}

@@ -23,12 +23,14 @@ export function LoginForm() {
       const cred = await signInWithEmailAndPassword(clientAuth, String(f.get("email")), String(f.get("password")));
       const res = await login(await cred.user.getIdToken());
       await signOut(clientAuth);
-      if (res.error) return setError(res.error);
-      router.replace("/");
+      if (res.error) {
+        setError(res.error);
+        return setBusy(false);
+      }
+      router.replace("/"); // keep the spinner until the dashboard has loaded
       router.refresh();
     } catch {
       setError("Incorrect email or password.");
-    } finally {
       setBusy(false);
     }
   }
