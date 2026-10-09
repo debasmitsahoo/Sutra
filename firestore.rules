@@ -1,0 +1,21 @@
+rules_version = '2';
+
+// Row-level access for Sutra ESG. Same rule as src/lib/db/read.ts (server side):
+// a user may read a doc when their assigned node (custom claim `node`) is in the doc's node_path.
+// All writes go through the server (Admin SDK) with Zod validation + audit, so clients never write.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null && request.auth.token.node is string; }
+    function inScope() { return signedIn() && request.auth.token.node in resource.data.node_path; }
+
+    match /{coll}/{id} {
+      allow read: if
+        (coll in ['financial_years', 'periods', 'materials', 'unit_conversions', 'emission_factors', 'kpi_master'] && signedIn())
+        || (coll in ['org_nodes', 'user_roles', 'equipment', 'activity_records', 'data_points', 'evidence_files',
+                     'evidence_links', 'workflow_events', 'audit_log', 'auditor_queries', 'financials',
+                     'intra_group_txns'] && inScope())
+        || (coll == 'profiles' && signedIn() && request.auth.uid == id);
+      allow write: if false;
+    }
+  }
+}
