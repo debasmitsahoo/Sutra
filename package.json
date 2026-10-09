@@ -11,7 +11,8 @@
     "check:access": "tsx --env-file=.env.local scripts/check-access.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check:factors": "tsx --env-file=.env.local scripts/check-factors.ts"
+    "check:factors": "tsx --env-file=.env.local scripts/check-factors.ts",
+    "check:evidence": "tsx --env-file=.env.local scripts/check-evidence.ts"
   },
   "dependencies": {
     "decimal.js": "^10.6.0",

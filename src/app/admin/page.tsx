@@ -130,7 +130,7 @@ export default async function AdminPage() {
                     </td>
                     <td className="num whitespace-nowrap px-5 py-2.5 text-xs text-muted">{a.collection}/{a.doc_id}</td>
                     <td className="px-5 py-2.5 text-xs">
-                      {a.action === "update" &&
+                      {a.before && a.after &&
                         Object.keys(a.after ?? {}).map((k) => (
                           <div key={k}>
                             <span className="text-muted">{k}:</span> <s className="text-muted">{String(a.before?.[k])}</s> → {String(a.after[k])}

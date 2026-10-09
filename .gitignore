@@ -42,3 +42,6 @@ next-env.d.ts
 
 # firebase admin key
 service-account.json
+
+# local evidence file store (see src/lib/evidence/storage.ts)
+/storage

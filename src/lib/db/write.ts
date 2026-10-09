@@ -38,18 +38,20 @@ export function audit(
 
 // stage* add a write + its audit entry to an open transaction, so callers can combine several
 // writes atomically (e.g. close factor v1 and create v2). createDoc/updateDoc wrap them for one-offs.
-export function stageCreate(tx: Transaction, actor: Actor, coll: Collection, data: unknown, id?: string) {
+export function stageCreate(tx: Transaction, actor: Actor, coll: Collection, data: unknown, id?: string, action = "create") {
   const parsed = COLLECTIONS[coll].parse(data) as Record<string, unknown>;
   const nodePath = (parsed.node_path as string[] | undefined) ?? [actor.node];
   if (parsed.node_path && !inScope(actor, parsed.node_path)) throw new ForbiddenError("Outside your organisation scope");
   const ref = id ? db.collection(coll).doc(id) : db.collection(coll).doc();
   tx.create(ref, { ...parsed, created_at: FieldValue.serverTimestamp() });
-  audit(tx, actor, "create", coll, ref.id, nodePath, null, parsed);
+  audit(tx, actor, action, coll, ref.id, nodePath, null, parsed);
   return ref.id;
 }
 
 /** `current` must have been read with tx.get in the same transaction. */
-export function stageUpdate(tx: Transaction, actor: Actor, coll: Collection, id: string, current: Record<string, unknown>, patch: Record<string, unknown>) {
+export function stageUpdate(
+  tx: Transaction, actor: Actor, coll: Collection, id: string, current: Record<string, unknown>, patch: Record<string, unknown>, action = "update",
+) {
   const { created_at, updated_at: _, ...before } = current; // eslint-disable-line @typescript-eslint/no-unused-vars
   if (before.node_path && !inScope(actor, before.node_path)) throw new ForbiddenError("Outside your organisation scope");
   const after = COLLECTIONS[coll].parse({ ...before, ...patch }) as Record<string, unknown>;
@@ -57,7 +59,7 @@ export function stageUpdate(tx: Transaction, actor: Actor, coll: Collection, id:
   tx.set(db.collection(coll).doc(id), { ...after, created_at, updated_at: FieldValue.serverTimestamp() });
   const changed = Object.keys(after).filter((k) => JSON.stringify(after[k]) !== JSON.stringify(before[k]));
   audit(
-    tx, actor, "update", coll, id, (before.node_path as string[]) ?? [actor.node],
+    tx, actor, action, coll, id, (before.node_path as string[]) ?? [actor.node],
     Object.fromEntries(changed.map((k) => [k, before[k] ?? null])),
     Object.fromEntries(changed.map((k) => [k, after[k] ?? null])),
   );
