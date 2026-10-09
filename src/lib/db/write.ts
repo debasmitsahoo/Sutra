@@ -36,34 +36,42 @@ export function audit(
   });
 }
 
-export async function createDoc(actor: Actor, coll: Collection, data: unknown, id?: string) {
+// stage* add a write + its audit entry to an open transaction, so callers can combine several
+// writes atomically (e.g. close factor v1 and create v2). createDoc/updateDoc wrap them for one-offs.
+export function stageCreate(tx: Transaction, actor: Actor, coll: Collection, data: unknown, id?: string) {
   const parsed = COLLECTIONS[coll].parse(data) as Record<string, unknown>;
   const nodePath = (parsed.node_path as string[] | undefined) ?? [actor.node];
   if (parsed.node_path && !inScope(actor, parsed.node_path)) throw new ForbiddenError("Outside your organisation scope");
   const ref = id ? db.collection(coll).doc(id) : db.collection(coll).doc();
-  await db.runTransaction(async (tx) => {
-    tx.create(ref, { ...parsed, created_at: FieldValue.serverTimestamp() });
-    audit(tx, actor, "create", coll, ref.id, nodePath, null, parsed);
-  });
+  tx.create(ref, { ...parsed, created_at: FieldValue.serverTimestamp() });
+  audit(tx, actor, "create", coll, ref.id, nodePath, null, parsed);
   return ref.id;
 }
 
+/** `current` must have been read with tx.get in the same transaction. */
+export function stageUpdate(tx: Transaction, actor: Actor, coll: Collection, id: string, current: Record<string, unknown>, patch: Record<string, unknown>) {
+  const { created_at, updated_at: _, ...before } = current; // eslint-disable-line @typescript-eslint/no-unused-vars
+  if (before.node_path && !inScope(actor, before.node_path)) throw new ForbiddenError("Outside your organisation scope");
+  const after = COLLECTIONS[coll].parse({ ...before, ...patch }) as Record<string, unknown>;
+  if (JSON.stringify(after.node_path) !== JSON.stringify(before.node_path)) throw new ForbiddenError("node_path is immutable");
+  tx.set(db.collection(coll).doc(id), { ...after, created_at, updated_at: FieldValue.serverTimestamp() });
+  const changed = Object.keys(after).filter((k) => JSON.stringify(after[k]) !== JSON.stringify(before[k]));
+  audit(
+    tx, actor, "update", coll, id, (before.node_path as string[]) ?? [actor.node],
+    Object.fromEntries(changed.map((k) => [k, before[k] ?? null])),
+    Object.fromEntries(changed.map((k) => [k, after[k] ?? null])),
+  );
+}
+
+export async function createDoc(actor: Actor, coll: Collection, data: unknown, id?: string) {
+  return db.runTransaction(async (tx) => stageCreate(tx, actor, coll, data, id));
+}
+
 export async function updateDoc(actor: Actor, coll: Collection, id: string, patch: Record<string, unknown>) {
-  const ref = db.collection(coll).doc(id);
   await db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
+    const snap = await tx.get(db.collection(coll).doc(id));
     if (!snap.exists) throw new Error(`${coll}/${id} not found`);
-    const { created_at, updated_at: _, ...before } = snap.data()!; // eslint-disable-line @typescript-eslint/no-unused-vars
-    if (before.node_path && !inScope(actor, before.node_path)) throw new ForbiddenError("Outside your organisation scope");
-    const after = COLLECTIONS[coll].parse({ ...before, ...patch }) as Record<string, unknown>;
-    if (JSON.stringify(after.node_path) !== JSON.stringify(before.node_path)) throw new ForbiddenError("node_path is immutable");
-    tx.set(ref, { ...after, created_at, updated_at: FieldValue.serverTimestamp() });
-    const changed = Object.keys(after).filter((k) => JSON.stringify(after[k]) !== JSON.stringify(before[k]));
-    audit(
-      tx, actor, "update", coll, id, (before.node_path as string[]) ?? [actor.node],
-      Object.fromEntries(changed.map((k) => [k, before[k] ?? null])),
-      Object.fromEntries(changed.map((k) => [k, after[k] ?? null])),
-    );
+    stageUpdate(tx, actor, coll, id, snap.data()!, patch);
   });
 }
 

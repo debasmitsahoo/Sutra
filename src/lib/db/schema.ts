@@ -60,11 +60,35 @@ export const Period = z.object({
   unlock_reason: z.string().optional(),
 });
 
+export const GwpSet = z.enum(["AR4", "AR5", "AR6"]);
+
+export const GHG_CATEGORIES = {
+  stationary_combustion: "Stationary combustion",
+  mobile_combustion: "Mobile combustion",
+  process: "Process emissions",
+  fugitive: "Fugitive emissions",
+  purchased_electricity: "Purchased electricity",
+  purchased_steam: "Purchased steam / heat",
+  purchased_cooling: "Purchased cooling",
+  cat1_purchased_goods: "Cat 1 · Purchased goods",
+  cat4_upstream_transport: "Cat 4 · Upstream transport",
+  cat5_waste: "Cat 5 · Waste",
+  cat6_business_travel: "Cat 6 · Business travel",
+  cat7_commuting: "Cat 7 · Employee commuting",
+  cat9_downstream_transport: "Cat 9 · Downstream transport",
+} as const;
+
 export const Material = z.object({
-  code: z.string(),
-  name: z.string(),
-  category: z.string(),
-  base_unit: z.string(),
+  code: z.string().regex(/^[A-Z0-9-]+$/, "Use capitals, digits and dashes"),
+  name: z.string().trim().min(2),
+  scope: z.literal([1, 2, 3]),
+  categories: z.array(z.enum(Object.keys(GHG_CATEGORIES) as [keyof typeof GHG_CATEGORIES])).min(1),
+  base_unit: z.string(), // factors are expressed per base unit
+  units: z.array(z.string()).min(1), // units users may enter in
+  ncv_gj_per_unit: dec.optional(), // energy content per base unit, for the BRSR energy table
+  is_renewable: z.boolean().default(false),
+  gwp: z.partialRecord(GwpSet, z.number().positive()).optional(), // fugitive gases (HFCs, SF6)
+  help: z.string().optional(),
   active: z.boolean().default(true),
 });
 
@@ -73,22 +97,27 @@ export const UnitConversion = z.object({
   to_unit: z.string(),
   factor: dec,
   material_id: id.optional(), // density-style conversions (L -> kg) are material specific
+  note: z.string().optional(),
 });
 
 export const EmissionFactor = z.object({
   material_id: id,
-  region: z.string(),
+  region: z.string().regex(/^([A-Z]{2}|GLOBAL)$/, "ISO country code or GLOBAL"),
   unit: z.string(),
-  gases: z.object({ co2: dec, ch4: dec, n2o: dec, other: dec.optional() }),
-  gwp_set: z.enum(["AR4", "AR5", "AR6"]),
+  gases: z.object({ co2: dec, ch4: dec, n2o: dec, other: dec.optional() }), // kg per unit
+  co2e: dec.optional(), // composite kg CO2e per unit when no gas-wise split is published
+  gwp_set: GwpSet,
   valid_from: isoDate,
   valid_to: isoDate.nullable(),
   version: z.number().int().positive(),
-  source: z.string(),
-  publisher: z.string(),
-  citation: z.string(),
+  source: z.string().min(2),
+  publisher: z.string().min(2),
+  citation: z.string().min(2),
+  verify_note: z.string().optional(), // "VERIFY: <suggested Indian source>" on unconfirmed seeds
   status: z.enum(["draft", "approved", "retired"]),
-  approved_by: id.optional(),
+  approved_by: z.string().optional(),
+  approved_at: z.string().optional(),
+  created_by: z.string().optional(),
 });
 
 export const Equipment = z.object({

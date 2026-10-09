@@ -1,8 +1,11 @@
-// Demo seed: MEIL Group (demo) hierarchy, one user per role, FY 2025-26 and 2026-27.
-// Idempotent: org/FY/period ids are deterministic and users are get-or-create.
+// Demo seed: MEIL Group (demo) hierarchy, one user per role, FY 2025-26 and 2026-27,
+// plus the material / unit / draft emission factor library (scripts/data/library.ts).
+// Idempotent: ids are deterministic, users are get-or-create, and library docs are only created when
+// missing, so re-seeding never resets an approved factor or a version added in the app.
 // Run: npm run seed
 import { adminAuth, db } from "../src/lib/firebase/admin";
-import { FinancialYear, OrgNode, Period, Profile, UserRole, type Role } from "../src/lib/db/schema";
+import { EmissionFactor, FinancialYear, Material, OrgNode, Period, Profile, UnitConversion, UserRole, type Role } from "../src/lib/db/schema";
+import { CONVERSIONS, FACTORS, MATERIALS, SEED_VALID_FROM } from "./data/library";
 import { DEMO_PASSWORD } from "./demo";
 
 type Rbi = "rural" | "semi_urban" | "urban" | "metropolitan";
@@ -97,4 +100,22 @@ async function main() {
   }
 }
 
-main().then(() => process.exit(0), (e) => (console.error(e), process.exit(1)));
+async function createMissing(coll: string, docs: [id: string, data: Record<string, unknown>][]) {
+  const refs = docs.map(([id]) => db.collection(coll).doc(id));
+  const existing = new Set((await db.getAll(...refs)).filter((d) => d.exists).map((d) => d.id));
+  const batch = db.batch();
+  for (const [id, data] of docs) if (!existing.has(id)) batch.create(db.collection(coll).doc(id), data);
+  await batch.commit();
+  console.log(`${coll}: ${docs.length - existing.size} created, ${existing.size} kept`);
+}
+
+async function seedLibrary() {
+  await createMissing("materials", MATERIALS.map((m) => [m.code, Material.parse(m)]));
+  await createMissing("unit_conversions", CONVERSIONS.map((c) => [`${c.from_unit}-${c.to_unit}${c.material_id ? `-${c.material_id}` : ""}`, UnitConversion.parse(c)]));
+  await createMissing("emission_factors", FACTORS.map((f) => [
+    `${f.material_id}-${f.region}-v1`,
+    EmissionFactor.parse({ ...f, gwp_set: "AR5", valid_from: SEED_VALID_FROM, valid_to: null, version: 1, status: "draft", created_by: "seed" }),
+  ]));
+}
+
+main().then(seedLibrary).then(() => process.exit(0), (e) => (console.error(e), process.exit(1)));
