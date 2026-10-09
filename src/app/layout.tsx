@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Inter, Instrument_Serif } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { AppShell } from "@/components/AppShell";
 import "./globals.css";
 
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
-const serif = Instrument_Serif({ variable: "--font-instrument", subsets: ["latin"], weight: "400" });
-const mono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"], weight: ["400", "500"] });
+const geist = Geist({ variable: "--font-geist", subsets: ["latin"] });
+const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Sutra ESG",
@@ -15,7 +14,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${serif.variable} ${mono.variable} antialiased`}>
+      <body className={`${geist.variable} ${mono.variable} antialiased`}>
         <AppShell>{children}</AppShell>
       </body>
     </html>

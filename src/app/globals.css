@@ -1,16 +1,21 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-bg: #f5f3ee;
+  --color-bg: #f6f7f9;
   --color-surface: #ffffff;
-  --color-ink: #141414;
-  --color-muted: #6b6b66;
-  --color-line: #d9d5cc;
-  --color-accent: #1e5b43;
-  --color-warn: #c2410c;
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-serif: var(--font-instrument), Georgia, serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --color-ink: #0f172a;
+  --color-muted: #64748b;
+  --color-line: #e5e7eb;
+  --color-accent: #059669;
+  --color-accent-soft: #ecfdf5;
+  --color-warn: #ea580c;
+  --color-danger: #dc2626;
+  --color-side: #0b1512;
+  --color-s1: #f97316;
+  --color-s2: #3b82f6;
+  --color-s3: #8b5cf6;
+  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 body {
@@ -21,11 +26,9 @@ body {
 
 @layer base {
   input, select, textarea {
-    @apply border border-line bg-surface px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none;
+    @apply rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink shadow-xs transition
+      placeholder:text-muted/70 focus:border-accent focus:ring-4 focus:ring-accent/10 focus:outline-none;
   }
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 1px;
-}
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }

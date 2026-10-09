@@ -10,7 +10,9 @@ export default async function Section({ params }: { params: Promise<{ section: s
   return (
     <>
       <PageHeader title={item.label} />
-      <EmptyState title="Coming in a later phase" />
+      <EmptyState icon={item.icon} title={`${item.label} is on the way`}>
+        This module is being built in a later phase.
+      </EmptyState>
     </>
   );
 }
