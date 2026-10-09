@@ -1,26 +1,31 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-bg: #f5f3ee;
+  --color-surface: #ffffff;
+  --color-ink: #141414;
+  --color-muted: #6b6b66;
+  --color-line: #d9d5cc;
+  --color-accent: #1e5b43;
+  --color-warn: #c2410c;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-serif: var(--font-instrument), Georgia, serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+@layer base {
+  input, select, textarea {
+    @apply border border-line bg-surface px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
 }
